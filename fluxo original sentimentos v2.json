@@ -1,0 +1,309 @@
+{
+  "name": "fluxo original sentimentos v2",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "fluxo-original",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1280,
+        -32
+      ],
+      "id": "fbcd5948-a530-48fa-975c-39b59c64b365",
+      "name": "Webhook",
+      "webhookId": "63727fa6-f156-46b4-bd91-b72c5288c592"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Recebe o texto do webhook\nconst texto = $input.first().json.query?.texto || \"sem texto\";\nconst lower = texto.toLowerCase()\n  .normalize(\"NFD\").replace(/[\\u0300-\\u036f]/g, \"\"); // remove acentos\n\n// Lista expandida de palavras-chave\nconst positivas = [\n  \"bom\", \"otimo\", \"excelente\", \"feliz\", \"incrivel\",\n  \"perfeito\", \"maravilhoso\", \"adorei\", \"amei\", \"satisfeito\",\n  \"satisfeita\", \"fantastico\", \"fantastica\", \"top\", \"legal\",\n  \"rapido\", \"eficiente\", \"recomendo\", \"gostei\", \"show\"\n];\n\nconst negativas = [\n  \"ruim\", \"pessimo\", \"pessima\", \"horrivel\", \"triste\",\n  \"terrivel\", \"odeio\", \"detestei\", \"odiei\", \"decepcionante\",\n  \"decepcionado\", \"decepcionada\", \"lento\", \"quebrado\",\n  \"nao funciona\", \"nao gostei\", \"nao recomendo\", \"problema\",\n  \"defeito\", \"falhou\"\n];\n\n// Detecta negacao simples (ex: \"nao e bom\" → negativo)\nconst temNegacao = /(nao|nunca|jamais)\\s+\\w*/.test(lower);\n\nlet sentimento = \"neutro\";\n\nif (!temNegacao && positivas.some(p => lower.includes(p))) {\n  sentimento = \"positivo\";\n} else if (temNegacao || negativas.some(n => lower.includes(n))) {\n  sentimento = \"negativo\";\n}\n\nreturn [{ json: { texto, sentimento } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1040,
+        -32
+      ],
+      "id": "9d5e1b53-5b21-4cf4-9fe3-acdbf32acef0",
+      "name": "Analisar Sentimento"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-positivo",
+              "leftValue": "={{ $json.sentimento }}",
+              "rightValue": "positivo",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -800,
+        -32
+      ],
+      "id": "270ffd4c-9dbf-4be9-85ea-21b1eb5f9a11",
+      "name": "É Positivo?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-negativo",
+              "leftValue": "={{ $json.sentimento }}",
+              "rightValue": "negativo",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -800,
+        192
+      ],
+      "id": "55c79c02-f14e-47b7-9232-1060ddc807f4",
+      "name": "É Negativo?"
+    },
+    {
+      "parameters": {
+        "fromEmail": "eglonneto@gmail.com",
+        "toEmail": "eglonneto@gmail.com",
+        "subject": "=✅ Sentimento POSITIVO: {{ $json.texto }}",
+        "emailFormat": "text",
+        "text": "=Texto recebido: {{ $json.texto }}\nSentimento detectado: POSITIVO 😊\n\nObrigado pelo feedback positivo!",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        -560,
+        -144
+      ],
+      "id": "818a58a4-1b02-427f-ae15-2dc33585ae6f",
+      "name": "Email Positivo",
+      "webhookId": "27b2ff56-31db-4834-8a31-b8093494d330",
+      "credentials": {
+        "smtp": {
+          "id": "YuNgpdrASlTPMGu9",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "eglonneto@gmail.com",
+        "toEmail": "eglonneto@gmail.com",
+        "subject": "=❌ Sentimento NEGATIVO: {{ $json.texto }}",
+        "emailFormat": "text",
+        "text": "=Texto recebido: {{ $json.texto }}\nSentimento detectado: NEGATIVO 😞\n\nAtenção: feedback negativo recebido. Verificar com urgência.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        -560,
+        192
+      ],
+      "id": "8685cc79-59a2-4491-826c-647948f9d182",
+      "name": "Email Negativo",
+      "webhookId": "2d455565-f1ee-4651-97a7-5957fdf83011",
+      "credentials": {
+        "smtp": {
+          "id": "YuNgpdrASlTPMGu9",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "eglonneto@gmail.com",
+        "toEmail": "eglonneto@gmail.com",
+        "subject": "=⚪ Sentimento NEUTRO: {{ $json.texto }}",
+        "emailFormat": "text",
+        "text": "=Texto recebido: {{ $json.texto }}\nSentimento detectado: NEUTRO 😐\n\nNão foi possível classificar o sentimento com clareza.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        -560,
+        352
+      ],
+      "id": "b09aa964-1794-4f7b-8e82-9f03357e2c8d",
+      "name": "Email Neutro",
+      "webhookId": "79877656-18c0-4436-a6b4-646900ffc862",
+      "credentials": {
+        "smtp": {
+          "id": "YuNgpdrASlTPMGu9",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Registra o resultado no log CSV\nconst texto = $input.first().json.texto || \"sem texto\";\nconst sentimento = $input.first().json.sentimento || \"desconhecido\";\nconst data = new Date().toISOString();\n\nconst linha = `${data},\"${texto}\",${sentimento}\\n`;\n\nreturn [{ json: { csv_linha: linha, texto, sentimento, status: \"salvo no log\" } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -304,
+        -32
+      ],
+      "id": "a5886e76-1b9d-45f5-94ae-10c4c8d5bc8a",
+      "name": "Registrar no Log CSV"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -64,
+        -32
+      ],
+      "id": "9d4ef756-7f41-4404-bd27-8ecc96a214b9",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Analisar Sentimento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analisar Sentimento": {
+      "main": [
+        [
+          {
+            "node": "É Positivo?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Registrar no Log CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "É Positivo?": {
+      "main": [
+        [
+          {
+            "node": "Email Positivo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "É Negativo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "É Negativo?": {
+      "main": [
+        [
+          {
+            "node": "Email Negativo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Email Neutro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Positivo": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Negativo": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Neutro": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "dbfa97cb-f172-4903-9f8b-8cd4e813a4b4",
+  "meta": {
+    "instanceId": "75c2e7e46fe228b02b4e95b76f5694bd5920046ee8eacea4b7d2991600159ebb"
+  },
+  "id": "j2z75oN731V0wB3M",
+  "tags": []
+}
