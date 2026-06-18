@@ -1,0 +1,393 @@
+{
+  "name": "fluxo original sentimentos v2",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const texto = $input.first().json.query?.texto || \"sem texto\";\nconst lower = texto.toLowerCase()\n  .normalize(\"NFD\").replace(/[\\u0300-\\u036f]/g, \"\");\n\nconst muitoPositivas = [\n  // Originais\n  \"excelente\", \"incrivel\", \"maravilhoso\", \"fantastico\", \"perfeito\",\n  \"amei\", \"adorei\", \"sensacional\", \"espetacular\", \"excepcional\",\n  \"mt bom\", \"muito bom\", \"melhor\", \"top demais\", \"show demais\",\n  \"surpreendente\", \"impressionante\", \"extraordinario\", \"magnifico\",\n  \"otimo demais\", \"amei demais\", \"melhor do mundo\", \"super rapido\",\n  \"super eficiente\", \"nota 10\", \"nota dez\", \"5 estrelas\", \"cinco estrelas\",\n  \"superou expectativas\", \"superou as expectativas\", \"valeu cada centavo\",\n  \"recomendo demais\", \"indico demais\", \"produto top\", \"servico top\",\n  // Novas\n  \"perfeicao\", \"impecavel\", \"sublime\", \"deslumbrante\", \"encantador\",\n  \"encantadora\", \"fabuloso\", \"fabulosa\", \"prodigioso\", \"prodigiosa\",\n  \"esplendido\", \"esplendida\", \"formidavel\", \"portentoso\", \"colossal\",\n  \"estupendo\", \"magnificente\", \"primoroso\", \"primorosa\", \"refinado\",\n  \"refinada\", \"requintado\", \"requintada\", \"incomparavel\", \"sem igual\",\n  \"sem precedentes\", \"unico\", \"unica\", \"revolucionario\", \"inovador\",\n  \"inovadora\", \"genial\", \"brilhante\", \"fenomenal\", \"prodigioso\",\n  \"melhor compra\", \"melhor produto\", \"melhor servico\", \"melhor app\",\n  \"melhor experiencia\", \"experiencia incrivel\", \"experiencia fantastica\",\n  \"muito satisfeito\", \"muito satisfeita\", \"completamente satisfeito\",\n  \"super satisfeito\", \"encantado\", \"encantada\", \"fascinado\", \"fascinada\",\n  \"apaixonado\", \"apaixonada\", \"viciado\", \"viciada\", \"obcecado\", \"obcecada\",\n  \"nao consigo parar\", \"nao tem igual\", \"nunca vi igual\", \"o melhor\",\n  \"a melhor\", \"simplesmente perfeito\", \"simplesmente incrivel\",\n  \"muito acima do esperado\", \"muito melhor que esperava\",\n  \"chegou antes do prazo\", \"entrega antecipada\", \"rapido demais\",\n  \"veloz demais\", \"instantaneo\", \"imediato\", \"surpreendeu muito\",\n  \"valeu muito a pena\", \"compensou demais\", \"barato e bom\",\n  \"otima qualidade\", \"excelente qualidade\", \"alta qualidade\",\n  \"qualidade premium\", \"qualidade superior\", \"qualidade excepcional\"\n];\n\nconst positivas = [\n  // Originais\n  \"bom\", \"otimo\", \"feliz\", \"satisfeito\", \"satisfeita\", \"legal\",\n  \"rapido\", \"eficiente\", \"recomendo\", \"gostei\", \"show\", \"top\",\n  \"bacana\", \"funcionou\", \"aprovado\", \"curtei\", \"valeu\", \"util\",\n  \"agradavel\", \"pratico\", \"facil\", \"simples\", \"bonito\", \"bonita\",\n  \"elegante\", \"moderno\", \"moderna\", \"resistente\", \"duravel\", \"confiavel\",\n  \"entrega rapida\", \"chegou rapido\", \"bem embalado\", \"embalagem boa\",\n  \"custo beneficio\", \"vale a pena\", \"produto bom\", \"funciona bem\",\n  \"atendimento bom\", \"suporte bom\", \"qualidade boa\", \"boa qualidade\",\n  \"gostei muito\", \"curti\", \"recomendo\", \"indico\", \"comprarei de novo\",\n  \"vou comprar de novo\", \"voltarei\", \"voltei\", \"comprei de novo\",\n  // Novas\n  \"agradei\", \"adoravel\", \"adoravel\", \"simpatico\", \"simpatica\",\n  \"atencioso\", \"atenciosa\", \"prestativo\", \"prestativa\", \"educado\",\n  \"educada\", \"gentil\", \"cordial\", \"profissional\", \"competente\",\n  \"dedicado\", \"dedicada\", \"cuidadoso\", \"cuidadosa\", \"organizado\",\n  \"organizada\", \"pontual\", \"preciso\", \"precisa\", \"correto\", \"correta\",\n  \"honesto\", \"honesta\", \"transparente\", \"justo\", \"justa\",\n  \"acessivel\", \"economico\", \"economica\", \"barato\", \"barata\",\n  \"em conta\", \"bom preco\", \"preco justo\", \"preco acessivel\",\n  \"preco bom\", \"vale o preco\", \"preco razoavel\", \"preco ok\",\n  \"bom custo\", \"bom acabamento\", \"acabamento bom\", \"bem feito\",\n  \"bem construido\", \"bem construida\", \"solido\", \"solida\", \"robusto\",\n  \"robusta\", \"firme\", \"estavel\", \"consistente\", \"confiante\",\n  \"sem problemas\", \"sem defeitos\", \"sem reclamacoes\", \"perfeito\",\n  \"funcionando bem\", \"funcionando otimo\", \"funcionando perfeitamente\",\n  \"chegou certo\", \"chegou inteiro\", \"chegou intacto\", \"chegou bem\",\n  \"bem embalado\", \"embalagem segura\", \"protegido\", \"protegida\",\n  \"entregue no prazo\", \"dentro do prazo\", \"no prazo combinado\",\n  \"atendimento rapido\", \"resposta rapida\", \"suporte eficiente\",\n  \"resolveu rapido\", \"resolveu bem\", \"resolveu o problema\",\n  \"cumpriu o prometido\", \"cumpriu prazo\", \"entregou como prometido\",\n  \"superou\", \"gostei bastante\", \"gostei demais\", \"curti muito\",\n  \"aprovei\", \"recomendo sim\", \"com certeza recomendo\", \"compensa\",\n  \"vale\", \"valeu a pena\", \"bom negocio\", \"boa compra\", \"boa escolha\",\n  \"acertei na escolha\", \"nao me arrependi\", \"sem arrependimento\",\n  \"compra certa\", \"decisao certa\", \"boa decisao\"\n];\n\nconst muitoNegativas = [\n  // Originais\n  \"pessimo\", \"horrivel\", \"terrivel\", \"odiei\", \"detestei\",\n  \"uma merda\", \"lixo\", \"horrivel demais\", \"muito ruim\", \"mt ruim\",\n  \"nao funciona\", \"nao recomendo\", \"nunca mais\", \"decepcionante demais\",\n  \"uma porcaria\", \"porcaria\", \"vergonhoso\", \"vergonha\", \"inadmissivel\",\n  \"absurdo\", \"um desastre\", \"completo fracasso\", \"fraude\", \"enganacao\",\n  \"golpe\", \"roubaram\", \"me roubaram\", \"produto falso\", \"falsificado\",\n  \"nao chegou\", \"sumiu\", \"desapareceu\", \"jogaram fora\", \"veio quebrado\",\n  \"veio com defeito\", \"parou de funcionar\", \"estragou rapido\",\n  \"pessimo atendimento\", \"pessimo suporte\", \"ignoraram\", \"sem resposta\",\n  // Novas\n  \"deploravel\", \"lamentavel\", \"calamitoso\", \"catastrofico\", \"catastrofica\",\n  \"desastroso\", \"desastrosa\", \"horroroso\", \"horrorosa\", \"repugnante\",\n  \"nojento\", \"nojenta\", \"inaceitavel\", \"intoleravel\", \"inadmissivel\",\n  \"revoltante\", \"indignante\", \"escandaloso\", \"escandalosa\", \"aberrante\",\n  \"um vexame\", \"uma vergonha\", \"uma piada\", \"ridiculamente ruim\",\n  \"pessima experiencia\", \"experiencia horrivel\", \"experiencia terrivel\",\n  \"pior compra\", \"pior produto\", \"pior servico\", \"pior app\",\n  \"pior atendimento\", \"pior empresa\", \"nunca mais compro\", \"nunca mais uso\",\n  \"nunca mais volto\", \"jogo fora\", \"jogue fora\", \"joga fora\",\n  \"nao vale nada\", \"nao presta\", \"uma droga\", \"produto uma droga\",\n  \"total decepção\", \"total decepcionante\", \"completamente decepcionante\",\n  \"totalmente ruim\", \"completamente ruim\", \"horrivelmente ruim\",\n  \"trabalho pessimo\", \"qualidade pessima\", \"zero qualidade\",\n  \"sem qualidade\", \"falta de qualidade\", \"falta de respeito\",\n  \"sem respeito\", \"desrespeito total\", \"falta de vergonha\",\n  \"propaganda enganosa\", \"publicidade enganosa\", \"mentira\",\n  \"me enganaram\", \"senti enganado\", \"senti enganada\", \"fui lesado\",\n  \"fui lesada\", \"fui prejudicado\", \"fui prejudicada\",\n  \"dinheiro perdido\", \"perdi dinheiro\", \"jogue dinheiro fora\",\n  \"nao funciona de jeito nenhum\", \"nao liga de jeito nenhum\",\n  \"nao abre de jeito nenhum\", \"completamente quebrado\", \"chegou destruido\",\n  \"chegou destruida\", \"veio totalmente quebrado\", \"veio rasgado\",\n  \"veio amassado demais\", \"chegou molhado\", \"chegou aberto\",\n  \"produto errado\", \"enviaram errado\", \"mandaram errado\",\n  \"tamanho errado\", \"cor errada\", \"modelo errado\", \"versao errada\"\n];\n\nconst negativas = [\n  // Originais\n  \"ruim\", \"problema\", \"defeito\", \"quebrado\", \"lento\", \"falhou\",\n  \"decepcionado\", \"decepcionada\", \"nao gostei\", \"chateado\", \"pessima\",\n  \"travou\", \"bugou\", \"demorou\", \"atrasou\", \"errado\", \"errada\",\n  \"fraco\", \"fraca\", \"fragil\", \"arranhado\", \"riscado\", \"sujo\", \"suja\",\n  \"chegou tarde\", \"entrega demorou\", \"mal embalado\", \"embalagem ruim\",\n  \"caro demais\", \"muito caro\", \"nao vale\", \"nao valeu\", \"frustrado\",\n  \"frustrada\", \"insatisfeito\", \"insatisfeita\", \"nao funcionou\",\n  \"parou\", \"travado\", \"nao liga\", \"nao carrega\", \"nao conecta\",\n  \"atendimento ruim\", \"suporte ruim\", \"sem suporte\", \"sem atendimento\",\n  // Novas\n  \"decepcionante\", \"desapontado\", \"desapontada\", \"desapontante\",\n  \"abaixo do esperado\", \"abaixo da expectativa\", \"nao correspondeu\",\n  \"nao atendeu\", \"nao cumpriu\", \"nao entregou\", \"nao funcionou direito\",\n  \"funcionou mal\", \"funcionou pouco\", \"durou pouco\", \"nao durou\",\n  \"estragou logo\", \"quebrou logo\", \"parou logo\", \"apresentou defeito\",\n  \"com defeito\", \"defeituoso\", \"defeituosa\", \"com problema\",\n  \"problematico\", \"problematica\", \"complicado\", \"complicada\",\n  \"dificil\", \"trabalhoso\", \"trabalhosa\", \"confuso\", \"confusa\",\n  \"instrucoes ruins\", \"manual ruim\", \"sem instrucoes\", \"dificil de usar\",\n  \"dificil de montar\", \"dificil de instalar\", \"dificil de configurar\",\n  \"nao veio completo\", \"faltou pecas\", \"faltou acessorios\", \"incompleto\",\n  \"incompleta\", \"faltando\", \"sem todos os itens\", \"kit incompleto\",\n  \"embalagem danificada\", \"caixa danificada\", \"caixa amassada\",\n  \"produto riscado\", \"produto arranhado\", \"produto sujo\", \"produto manchado\",\n  \"entrega lenta\", \"frete lento\", \"demorou muito\", \"esperou muito\",\n  \"muito tempo\", \"prazo estourou\", \"prazo ultrapassado\", \"atrasado\",\n  \"atrasada\", \"demora\", \"muita demora\", \"muito atraso\",\n  \"nao responderam\", \"sem retorno\", \"sem feedback\", \"sem contato\",\n  \"impossivel contato\", \"nao atendem\", \"linha ocupada\", \"nao atende telefone\",\n  \"caro\", \"preco alto\", \"preco elevado\", \"preco salgado\", \"cobrou demais\",\n  \"cobrou errado\", \"valor errado\", \"cobranca indevida\", \"cobrou a mais\",\n  \"arrependido\", \"arrependida\", \"me arrependi\", \"foi um erro\",\n  \"erro de compra\", \"nao compro de novo\", \"nao volto mais\",\n  \"nao indico\", \"nao recomendo isso\", \"pessima escolha\", \"ma escolha\",\n  \"decidi errado\", \"errei na escolha\", \"devolverei\", \"vou devolver\",\n  \"pedi reembolso\", \"quero reembolso\", \"abri reclamacao\", \"fiz reclamacao\",\n  \"reclamei\", \"reclamo\", \"vou reclamar\", \"vou processar\", \"no procon\"\n];\n\n// Detecta negação antes de palavra positiva\nconst temNegacaoPositiva = /(nao|nunca|jamais|nem)\\s+(gostei|amei|adorei|curti|recomendo|indico|aprovei|valeu|funcionou|top|bom|otimo|show|achei bom|achei legal|fiquei feliz|fiquei satisfeito|fiquei satisfeita)/.test(lower);\n\n// Detecta negação antes de palavra negativa\nconst temNegacaoNegativa = /(nao|nunca|jamais|nem)\\s+(e\\s+)?(ruim|pessimo|horrivel|terrivel|defeito|problema|lento|fraco|caro|atrasou|quebrou|estragou|falhou)/.test(lower);\n\nlet sentimento = \"neutro\";\nlet intensidade = \"normal\";\nlet score = 50;\n\nif (!temNegacaoPositiva && muitoPositivas.some(p => lower.includes(p))) {\n  sentimento = \"positivo\";\n  intensidade = \"forte\";\n  score = 95;\n} else if (!temNegacaoPositiva && positivas.some(p => lower.includes(p))) {\n  sentimento = \"positivo\";\n  intensidade = \"normal\";\n  score = 75;\n} else if (temNegacaoPositiva) {\n  sentimento = \"negativo\";\n  intensidade = \"normal\";\n  score = 25;\n}\n\nif (sentimento === \"neutro\" || sentimento === \"negativo\") {\n  if (!temNegacaoNegativa && muitoNegativas.some(n => lower.includes(n))) {\n    sentimento = \"negativo\";\n    intensidade = \"forte\";\n    score = 5;\n  } else if (!temNegacaoNegativa && negativas.some(n => lower.includes(n))) {\n    sentimento = \"negativo\";\n    intensidade = \"normal\";\n    score = 25;\n  } else if (temNegacaoNegativa) {\n    sentimento = \"positivo\";\n    intensidade = \"normal\";\n    score = 70;\n  }\n}\n\nreturn [{ json: { texto, sentimento, intensidade, score } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -928,
+        1104
+      ],
+      "id": "07657a09-eefe-4684-8fbf-eace6e665a88",
+      "name": "Analisar Sentimento"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-positivo",
+              "leftValue": "={{ $json.sentimento }}",
+              "rightValue": "positivo",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -688,
+        1056
+      ],
+      "id": "9c0552f6-6d78-4cfc-82ae-2ec4f4b45ccc",
+      "name": "É Positivo?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-negativo",
+              "leftValue": "={{ $json.sentimento }}",
+              "rightValue": "negativo",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -688,
+        1328
+      ],
+      "id": "d96e8237-3c09-47f8-b605-f058ad7907f2",
+      "name": "É Negativo?"
+    },
+    {
+      "parameters": {
+        "fromEmail": "eglonneto@gmail.com",
+        "toEmail": "eglonneto@gmail.com",
+        "subject": "=✅ Sentimento POSITIVO: {{ $json.texto }}",
+        "emailFormat": "text",
+        "text": "=Texto recebido: {{ $json.texto }}\nSentimento detectado: POSITIVO 😊\n\nObrigado pelo feedback positivo!",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        -464,
+        944
+      ],
+      "id": "67b4166a-874b-446a-991b-136fa44c5661",
+      "name": "Email Positivo",
+      "webhookId": "27b2ff56-31db-4834-8a31-b8093494d330",
+      "credentials": {
+        "smtp": {
+          "id": "YuNgpdrASlTPMGu9",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "eglonneto@gmail.com",
+        "toEmail": "eglonneto@gmail.com",
+        "subject": "=❌ Sentimento NEGATIVO: {{ $json.texto }}",
+        "emailFormat": "text",
+        "text": "=Texto recebido: {{ $json.texto }}\nSentimento detectado: NEGATIVO 😞\n\nAtenção: feedback negativo recebido. Verificar com urgência.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        -480,
+        1232
+      ],
+      "id": "2e61093f-f08a-41ea-a152-a1d9e7e875e7",
+      "name": "Email Negativo",
+      "webhookId": "2d455565-f1ee-4651-97a7-5957fdf83011",
+      "credentials": {
+        "smtp": {
+          "id": "YuNgpdrASlTPMGu9",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "eglonneto@gmail.com",
+        "toEmail": "eglonneto@gmail.com",
+        "subject": "=⚪ Sentimento NEUTRO: {{ $json.texto }}",
+        "emailFormat": "text",
+        "text": "=Texto recebido: {{ $json.texto }}\nSentimento detectado: NEUTRO 😐\nIntensidade: {{ $json.intensidade }}\nScore de confiança: {{ $json.score }}/100\n\nO texto não apresenta indicadores claros de satisfação ou insatisfação.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        -496,
+        1408
+      ],
+      "id": "c389f274-1d32-4165-a639-72dae11ff7fc",
+      "name": "Email Neutro",
+      "webhookId": "79877656-18c0-4436-a6b4-646900ffc862",
+      "credentials": {
+        "smtp": {
+          "id": "YuNgpdrASlTPMGu9",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const texto = $input.first().json.texto || \"sem texto\";\nconst sentimento = $input.first().json.sentimento || \"desconhecido\";\nconst intensidade = $input.first().json.intensidade || \"normal\";\nconst score = $input.first().json.score || 50;\nconst data = new Date().toISOString();\n\nconst linha = `${data},\"${texto}\",${sentimento}\\n`;\n\nreturn [{ json: { csv_linha: linha, texto, sentimento, intensidade, score } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -368,
+        1104
+      ],
+      "id": "9d310f73-da87-4e1d-963c-ffea0ebc2c6a",
+      "name": "Registrar no Log CSV"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1744,
+        1104
+      ],
+      "id": "ab203dc0-0dba-4627-9154-e711a09b94ba",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://api.telegram.org/bot8812223924:AAGzQ0MEv7EHEbZme7WXmXXJM2NH5cOG-hw/getUpdates",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1536,
+        1104
+      ],
+      "id": "36a26315-9ef6-49dc-ae80-c7dc8dae6075",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const updates = $input.first().json.result || [];\nconst agora = Math.floor(Date.now() / 1000);\nconst doisMinutosAtras = agora - 120;\n\nconst filtradas = updates.filter(u =>\n  u.message?.text &&\n  u.message.text.trim().length > 0 &&\n  !u.message.text.startsWith('/') &&\n  u.message?.date >= doisMinutosAtras\n);\n\nif (filtradas.length === 0) return [];\n\nreturn filtradas.map(u => ({\n  json: {\n    chatId: u.message.chat.id,\n    query: {\n      texto: u.message.text.trim()\n    }\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1328,
+        1104
+      ],
+      "id": "c54b058a-90f2-47bd-96d3-eb2c90701b97",
+      "name": "filtrar mensagens com /analisar"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.telegram.org/bot8812223924:AAGzQ0MEv7EHEbZme7WXmXXJM2NH5cOG-hw/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chat_id\": {{ $('filtrar mensagens com /analisar').item.json.chatId }},\n  \"text\": \"✅ Análise concluída!\\n\\n📝 Texto: {{ $('Registrar no Log CSV').item.json.texto }}\\n😊 Sentimento: {{ $('Registrar no Log CSV').item.json.sentimento }}\\n📊 Score: {{ $('Registrar no Log CSV').item.json.score }}/100\",\n  \"parse_mode\": \"Markdown\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -160,
+        1104
+      ],
+      "id": "975b7c2e-fb85-45e6-9b74-b27750656bde",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -1152,
+        1104
+      ],
+      "id": "7d1e1e75-c34d-4337-b4fa-2f8caab74af0",
+      "name": "Loop Over Items"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Analisar Sentimento": {
+      "main": [
+        [
+          {
+            "node": "É Positivo?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Registrar no Log CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "É Positivo?": {
+      "main": [
+        [
+          {
+            "node": "Email Positivo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "É Negativo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "É Negativo?": {
+      "main": [
+        [
+          {
+            "node": "Email Negativo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Email Neutro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Neutro": {
+      "main": [
+        [
+          {
+            "node": "Registrar no Log CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "filtrar mensagens com /analisar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "filtrar mensagens com /analisar": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar no Log CSV": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Analisar Sentimento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "cfe2120c-f414-4824-b826-74ae7035de24",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "75c2e7e46fe228b02b4e95b76f5694bd5920046ee8eacea4b7d2991600159ebb"
+  },
+  "id": "j2z75oN731V0wB3M",
+  "tags": []
+}
