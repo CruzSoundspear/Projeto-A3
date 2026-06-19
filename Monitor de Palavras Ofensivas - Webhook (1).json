@@ -1,0 +1,246 @@
+{
+  "name": "Monitor de Palavras Ofensivas - Webhook",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "monitor-palavras",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        2768,
+        3184
+      ],
+      "id": "193bcdb3-3643-44a2-861e-78bba51231de",
+      "name": "Receber Mensagem",
+      "webhookId": "monitor-palavras-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\n\nconst queryData = (raw.query && Object.keys(raw.query).length) ? raw.query : {};\nconst bodyData = (raw.body && Object.keys(raw.body).length) ? raw.body : {};\nconst data = { ...queryData, ...bodyData };\n\nconst palavraOriginal = (data.mensagem || data.palavra || data.texto || '').toString().trim();\nconst nomeCompleto = (data.nome || data.nomeCompleto || data.remetente || 'Desconhecido').toString().trim();\nconst identificador = (data.usuario || data.username || data.email || 'sem identificação').toString().trim();\nconst origem = (data.origem || data.canal || data.chatId || 'não informado').toString().trim();\n\nif (!palavraOriginal) {\n  return [{ json: { palavraOriginal: '', palavraLower: '', valida: false } }];\n}\n\nreturn [{\n  json: {\n    palavraOriginal,\n    palavraLower: palavraOriginal.toLowerCase(),\n    nomeCompleto,\n    identificador,\n    origem,\n    valida: true\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2976,
+        3184
+      ],
+      "id": "857dfb59-7839-4e55-8a58-90e8a4470891",
+      "name": "Preparar Mensagem"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.palavraLower }}",
+                    "rightValue": "idiota|imbecil|burro|incompetente|inútil|vagabundo|miserável|desgraçado|odeio|raiva|ameaça|vergonha|absurdo|ridículo|péssimo|otário|cretino|boçal|besta|estúpido|tolo|coió|lorpa|palerma|aselha|badameco|jumento|asno|mula|jerico|quadrúpede|cavalgadura|mentiroso|vigarista|corrupto|ladrão|bandido|criminoso|safado|canalha|escroque|patife|velhaco|malandro|pilantra|golpista|trapaceiro|desonesto|hipócrita|covarde|frouxo|medroso|fraco|imprestável|incapaz|fracassado|perdedor|lixo|escória|ralé|ordinário|grosseiro|rude|ignorante|bruto|arrogante|prepotente|soberbo|vaidoso|egocêntrico|egoísta|mesquinho|sovina|avarento|ganancioso|interesseiro|oportunista|aproveitador|parasita|sanguessuga|chato|irritante|enjoado|cínico|debochado|sarcástico|perigoso|louco|maluco|doido|insano|psicopata|perturbado|desequilibrado|instável|neurótico|histérico|exaltado|agressivo|violento|furioso|raivoso|irado|bravo|revoltado|indignado|perturbador|ameaçador|intimidador|assustador|monstro|demônio|diabo|satanás|maldito|amaldiçoado|maldição|praga|peste|podre|podridão|lixeira|sujeira|sujo|nojento|repugnante|asqueroso|horrível|horroroso|feio|disforme|grotesco|aberração|anormal|defeituoso|falho|fiasco|vexame|humilhação|insulto|xingamento|grosseria|atrevimento|descaro|insolência|desrespeito|abuso|exploração|manipulação|chantagem|coação|intimidação|extorsão|fraude|falsidade|mentira|enganação|traição|deslealdade|perfídia|traidor|desleal|falso|enganador|manipulador|explorador|abusador|agressor|perseguidor|opressor|tirano|ditador|déspota|autoritário|controlador|dominador|servil|rasteiro|bajulador|adulador|lambedor|maldade|cruel|perverso|sádico|mau|ruim|horrendo|terrível|deplorável|desprezível|execrável|infame|torpe|vil|ignóbil|baixo|covardemente|criminalmente|ilegalmente|ilegal|bandidagem|safadeza|picaretagem|golpe|fraude|calúnia|difamação|injúria|ofensa|agressão|ameaça|extorsão|sequestro|roubo|furto|assalto|crime|delito|contravenção|transgressão",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    },
+                    "id": "ea2e2c50-cd83-42e7-b945-ac54ce60f8f7"
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "ofensivo"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d9d4cce3-b020-4deb-91d6-70171515f2fe",
+      "name": "Classificar Palavra",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        3184,
+        3184
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "eglonneto@gmail.com",
+        "toEmail": "eglonneto@gmail.com",
+        "subject": "=🚨 ALERTA: Palavra Ofensiva Detectada",
+        "emailFormat": "text",
+        "text": "=⚠️ Palavra ofensiva detectada via webhook!\n\n👤 Remetente: {{ $json.nomeCompleto }}\n🆔 Identificador: {{ $json.identificador }}\n📍 Origem: {{ $json.origem }}\n\n🔴 Mensagem: {{ $json.palavraOriginal }}\n⏰ Data/Hora: {{ $now }}\n\nVerifique e tome as devidas providências.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        3424,
+        3088
+      ],
+      "id": "337ebd38-61e8-4f42-9717-46662800400f",
+      "name": "Email de Alerta Ofensivo",
+      "webhookId": "087e456e-697f-4e4f-92ea-89225ea21d34",
+      "credentials": {
+        "smtp": {
+          "id": "YuNgpdrASlTPMGu9",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json;\nconst nome = d.nomeCompleto || 'Usuário';\n\nconst texto = `⚠️ Atenção, ${nome}!\\n\\nSua mensagem contém linguagem inapropriada e não será tolerada.\\n\\nPedimos que mantenha o respeito com todos.\\n\\n🚨 Aviso: caso esse comportamento se repita, medidas adicionais poderão ser tomadas.`;\n\nreturn [{ json: { ...d, textoAviso: texto } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3664,
+        3088
+      ],
+      "id": "a9a685eb-51f1-454a-b9a3-785e68db5895",
+      "name": "Preparar Aviso"
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json;\nconst agora = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });\n\nreturn [{\n  json: {\n    dataHora: agora,\n    nomeCompleto: d.nomeCompleto || 'Desconhecido',\n    identificador: d.identificador || 'sem identificação',\n    origem: d.origem || 'não informado',\n    mensagem: d.palavraOriginal || '',\n    textoAviso: d.textoAviso || '',\n    status: 'ofensivo',\n    emailEnviado: 'sim'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3904,
+        3088
+      ],
+      "id": "4beeee82-7524-48fe-8974-6e30d4c7367b",
+      "name": "Preparar Registro"
+    },
+    {
+      "parameters": {
+        "operation": "append"
+      },
+      "type": "n8n-nodes-base.spreadsheetFile",
+      "typeVersion": 2,
+      "position": [
+        4144,
+        3088
+      ],
+      "id": "ea7cdd75-51dd-4768-883f-a7e568fa52ee",
+      "name": "Registrar no CSV"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"status\": \"ofensivo\", \"palavra\": $json.mensagem, \"aviso\": $json.textoAviso, \"emailEnviado\": true, \"registrado\": true } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        4384,
+        3088
+      ],
+      "id": "77abcb83-cca3-45db-a789-97252c362ebf",
+      "name": "Responder Ofensivo"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Receber Mensagem": {
+      "main": [
+        [
+          {
+            "node": "Preparar Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Mensagem": {
+      "main": [
+        [
+          {
+            "node": "Classificar Palavra",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classificar Palavra": {
+      "main": [
+        [
+          {
+            "node": "Email de Alerta Ofensivo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email de Alerta Ofensivo": {
+      "main": [
+        [
+          {
+            "node": "Preparar Aviso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Aviso": {
+      "main": [
+        [
+          {
+            "node": "Preparar Registro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Registro": {
+      "main": [
+        [
+          {
+            "node": "Registrar no CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar no CSV": {
+      "main": [
+        [
+          {
+            "node": "Responder Ofensivo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "e3315ff5-9fd2-4857-ab99-4f763575c6e5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "75c2e7e46fe228b02b4e95b76f5694bd5920046ee8eacea4b7d2991600159ebb"
+  },
+  "id": "FSs1coKYSjMbYGEs",
+  "tags": []
+}

@@ -1,0 +1,198 @@
+{
+  "name": "Monitor Telegram - Gmail",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "monitor-telegram",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "0b9296ba-2b8a-45ce-a288-5b9173dbb6f1",
+      "name": "Recebe Palavra",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -464,
+        176
+      ],
+      "webhookId": "c61dd61f-4327-4845-a793-e75b6bd596f4"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-1",
+              "leftValue": "={{ $json.query.palavra }}",
+              "rightValue": "urgente",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "aee7c26b-029e-481c-a193-976c6b99b7e5",
+      "name": "É urgente?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "eglonneto@gmail.com",
+        "toEmail": "eglonneto@gmail.com",
+        "subject": "=🚨 URGENTE: palavra \"{{ $json.query.palavra }}\" recebida via webhook",
+        "emailFormat": "text",
+        "text": "=⚠️ Mensagem marcada como URGENTE!\n\nPalavra recebida: {{ $json.query.palavra }}\n⏰ Data/Hora: {{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}\n\nVerifique e tome as devidas providências.",
+        "options": {}
+      },
+      "id": "faeacf2e-bc67-4288-84da-d738fb64b8ea",
+      "name": "Email urgente",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        32,
+        64
+      ],
+      "webhookId": "447f6c3d-d818-492d-89c0-6ec1a9f8ef94",
+      "credentials": {
+        "smtp": {
+          "id": "YuNgpdrASlTPMGu9",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "eglonneto@gmail.com",
+        "toEmail": "eglonneto@gmail.com",
+        "subject": "=✅ NORMAL: palavra \"{{ $json.query.palavra }}\" recebida via webhook",
+        "emailFormat": "text",
+        "text": "=✅ Mensagem recebida com prioridade normal.\n\nPalavra recebida: {{ $json.query.palavra }}\n⏰ Data/Hora: {{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}",
+        "options": {}
+      },
+      "id": "3dc24584-faa5-44f4-b40c-e7aece30bebe",
+      "name": "Email normal",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        32,
+        304
+      ],
+      "webhookId": "e8a37b0a-4972-48a6-9754-53740f12456b",
+      "credentials": {
+        "smtp": {
+          "id": "YuNgpdrASlTPMGu9",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{ \"mensagem\": \"Registrado e enviado por e-mail: urgente\" }",
+        "options": {}
+      },
+      "id": "ad7fa3b6-2528-4f1c-8a0e-d9862656a2ac",
+      "name": "Responde urgente",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        288,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{ \"mensagem\": \"Registrado e enviado por e-mail: normal\" }",
+        "options": {}
+      },
+      "id": "f14a396a-1351-43de-8452-78535fa0f364",
+      "name": "Responde normal",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        288,
+        304
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Recebe Palavra": {
+      "main": [
+        [
+          {
+            "node": "É urgente?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "É urgente?": {
+      "main": [
+        [
+          {
+            "node": "Email urgente",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Email normal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email urgente": {
+      "main": [
+        [
+          {
+            "node": "Responde urgente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email normal": {
+      "main": [
+        [
+          {
+            "node": "Responde normal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "41d8c087-52ab-4472-9ebc-1a5789bcbdaa",
+  "meta": {
+    "instanceId": "75c2e7e46fe228b02b4e95b76f5694bd5920046ee8eacea4b7d2991600159ebb"
+  },
+  "id": "ePd0zlG8RwWS7OIF",
+  "tags": []
+}
